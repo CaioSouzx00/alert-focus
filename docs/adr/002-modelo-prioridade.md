@@ -1,26 +1,40 @@
 # ADR 002 – Modelo de prioridade
 
-- **Status:** Rascunho
+- **Status:** Aceito (v1, pode evoluir)
 - **Data:** 2026-10-21
 
 ## Contexto
 
-Precisamos ordenar os municípios por criticidade de forma simples e explicável, sem Machine Learning.
+Precisamos ordenar os municípios por criticidade de forma **simples e explicável**, sem Machine Learning. Qualquer pessoa deve conseguir olhar um município no ranking e entender por que ele está ali.
 
-## Decisão (proposta inicial)
+## Decisão
 
-Score por município, calculado sobre as janelas de 24h e 48h:
+Score de 0 a 100 por município, calculado a partir dos focos das janelas de 24h e 48h (relativas ao momento da execução, em UTC):
 
 ```
-score = focos_24h + 0.5 * focos_24h_a_48h + bonus_concentracao
+prioridade = score_focos + score_frp + score_persistencia
 ```
 
-- `bonus_concentracao`: valor fixo adicionado se uma fração alta dos focos ocorreu nas últimas 6h (ex.: > 50%).
-- Níveis: **baixo / médio / alto / crítico**, por limites de score a calibrar com dados reais.
+| Componente | Máx. | Regra |
+|---|---|---|
+| `score_focos` | 60 | `60 × focos_24h / max(focos_24h entre municípios)` |
+| `score_frp` | 25 | `25 × min(frp_medio / max_frp_ref, 1) × min(focos_24h / 10, 1)` |
+| `score_persistencia` | 15 | 15 se houve focos também entre 24h e 48h atrás (`focos_48h > focos_24h`), senão 0 |
 
-> Os pesos e limites acima são pontos de partida e serão ajustados após olhar dados reais.
+- **FRP** (*Fire Radiative Power*) é a potência radiativa do fogo informada pelo INPE; é um indicador de intensidade.
+- `max_frp_ref` é o maior FRP médio entre municípios com pelo menos 10 focos.
+- O fator `min(focos_24h / 10, 1)` evita que poucos focos com FRP muito alto (ou um único foco) dominem o ranking. Sem ele, na primeira execução um município com 1 foco (FRP 289,6) ficou à frente de outro com 149 focos.
+- Desempate: maior número de focos em 24h.
+
+Constantes em [`src/processing/priority.py`](../../src/processing/priority.py): `PESO_FOCOS`, `PESO_FRP`, `PESO_PERSISTENCIA`, `MIN_FOCOS_FRP`.
 
 ## Consequências
 
-- (+) Fácil de explicar e de testar.
-- (−) Não considera bioma, área, vegetação ou clima (fica para versões futuras).
+- (+) Fácil de explicar, testar e ajustar (todas as colunas `score_*` ficam no resultado).
+- (−) **Score relativo:** `score_focos` depende do município com mais focos no dia. A prioridade compara municípios entre si em um mesmo dia; não é comparável entre dias.
+- (−) Não considera bioma, área do município, vegetação, clima nem `risco_fogo`.
+- (−) Janela de 24h pode estar incompleta em horários próximos da virada UTC, pois o arquivo do dia é parcial.
+
+## Evolução possível
+
+Pesos e limites foram escolhidos como ponto de partida, não calibrados com dados históricos. Próximos passos: normalização absoluta (por limiares), uso de `risco_fogo`/bioma e níveis (baixo/médio/alto/crítico).

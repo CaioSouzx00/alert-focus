@@ -19,3 +19,7 @@ data/raw/*
 .idea/
 .DS_Store
 Thumbs.db
+
+# Saídas processadas (regeneráveis)
+data/processed/*
+!data/processed/.gitkeep

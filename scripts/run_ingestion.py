@@ -1,4 +1,4 @@
-"""Ponto de entrada da ingestão de dados do INPE."""
+"""Ponto de entrada da ingestão de dados do INPE (download dos últimos dias)."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from src.ingestion.inpe_downloader import download_latest_csv
+from src.ingestion.inpe_downloader import download_recent_csvs
 
 logging.basicConfig(
     level=logging.INFO,
@@ -20,13 +20,13 @@ logging.basicConfig(
 
 def main() -> None:
     raw_dir = ROOT / "data" / "raw"
-    path = download_latest_csv(raw_dir)
+    paths = download_recent_csvs(raw_dir, days_back=3)
 
-    if path is None:
+    if not paths:
         logging.error("Ingestão falhou.")
         sys.exit(1)
 
-    logging.info("Ingestão OK → %s", path)
+    logging.info("Ingestão OK → %d arquivo(s): %s", len(paths), ", ".join(p.name for p in paths))
 
 
 if __name__ == "__main__":

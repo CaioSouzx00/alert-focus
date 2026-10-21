@@ -65,3 +65,57 @@ def download_latest_csv(output_dir: Path, days_back: int = 2) -> Path | None:
 
     logger.error("Não foi possível baixar nenhum CSV dos últimos %d dias", days_back)
     return None
+
+
+# Arquivos das últimas N datas são sempre rebaixados: o do dia corrente é parcial
+# e o do dia anterior pode ser completado depois da virada UTC.
+REFRESH_LAST_DAYS = 2
+
+
+def download_recent_csvs(output_dir: Path, days_back: int = 3) -> list[Path]:
+    """
+    Baixa os CSVs dos últimos `days_back` dias (incluindo hoje).
+    Retorna lista dos arquivos disponíveis (baixados agora ou já existentes),
+    do mais antigo para o mais recente.
+
+    - Dias já fechados e presentes em disco não são baixados de novo.
+    - Hoje e ontem são sempre rebaixados (arquivos podem estar incompletos).
+    - Se o download falhar e existir cópia local, a cópia é usada (último dado bom).
+    """
+    output_dir.mkdir(parents=True, exist_ok=True)
+    available: list[Path] = []
+
+    for idx, date_str in enumerate(_candidate_dates(days_back - 1)):
+        url = build_url(date_str)
+        output_path = output_dir / f"focos_diario_br_{date_str}.csv"
+        has_local = output_path.exists() and output_path.stat().st_size > 100
+
+        if has_local and idx >= REFRESH_LAST_DAYS:
+            logger.info("Já existe: %s", output_path.name)
+            available.append(output_path)
+            continue
+
+        logger.info("Tentando baixar: %s", url)
+        try:
+            response = requests.get(url, headers={"User-Agent": USER_AGENT}, timeout=DEFAULT_TIMEOUT)
+            if response.status_code == 404:
+                logger.warning("Não disponível: %s", date_str)
+            else:
+                response.raise_for_status()
+                if len(response.content) < 100:
+                    logger.warning("Arquivo muito pequeno para %s (%d bytes)", date_str, len(response.content))
+                else:
+                    output_path.write_bytes(response.content)
+                    logger.info("Salvo: %s (%d bytes)", output_path.name, len(response.content))
+                    available.append(output_path)
+                    continue
+        except requests.RequestException as exc:
+            logger.error("Erro %s: %s", date_str, exc)
+
+        if has_local:
+            logger.warning("Usando cópia local anterior de %s", output_path.name)
+            available.append(output_path)
+
+    available.reverse()  # _candidate_dates vai de hoje para trás
+    logger.info("%d de %d arquivos disponíveis", len(available), days_back)
+    return available
