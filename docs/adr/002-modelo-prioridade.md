@@ -28,10 +28,23 @@ prioridade = score_focos + score_frp + score_persistencia
 
 Constantes em [`src/processing/priority.py`](../../src/processing/priority.py): `PESO_FOCOS`, `PESO_FRP`, `PESO_PERSISTENCIA`, `MIN_FOCOS_FRP`.
 
+### Nível (limiares absolutos)
+
+O score acima serve para **ordenar** o ranking do dia (é relativo). Para a lista de alertas existe uma coluna separada, `nivel`, baseada apenas no número **absoluto** de focos em 24h do município, o que a torna comparável entre dias:
+
+| Nível | Focos em 24h |
+|---|---|
+| Crítico | ≥ 100 |
+| Alto | 40 – 99 |
+| Médio | 15 – 39 |
+| Baixo | < 15 |
+
+Os limiares são um ponto de partida e serão ajustados depois de ver o dashboard com dados reais (constante `LIMIARES_NIVEL`). Não consideram o tamanho do município.
+
 ## Consequências
 
 - (+) Fácil de explicar, testar e ajustar (todas as colunas `score_*` ficam no resultado).
-- (−) **Score relativo:** `score_focos` depende do município com mais focos no dia. A prioridade compara municípios entre si em um mesmo dia; não é comparável entre dias.
+- (−) **Score relativo:** `score_focos` depende do município com mais focos no dia. A prioridade compara municípios entre si em um mesmo dia; não é comparável entre dias. Para comparação entre dias e alertas absolutos usa-se o `nivel`.
 - (−) Não considera bioma, área do município, vegetação, clima nem `risco_fogo`.
 - (−) Janela de 24h pode estar incompleta em horários próximos da virada UTC, pois o arquivo do dia é parcial.
 

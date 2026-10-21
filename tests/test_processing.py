@@ -31,7 +31,7 @@ def _focos(municipio, n, horas_atras, frp=50.0):
     ts = pd.Timestamp(NOW) - pd.Timedelta(hours=horas_atras)
     return [
         {"id": f"{municipio}-{horas_atras}-{i}", "estado": "PA", "municipio": municipio,
-         "data_hora_gmt": ts, "frp": frp, "risco_fogo": 1.0}
+         "data_hora_gmt": ts, "frp": frp, "risco_fogo": 1.0, "lat": -1.0, "lon": -50.0}
         for i in range(n)
     ]
 

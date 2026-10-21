@@ -18,6 +18,20 @@ PESO_PERSISTENCIA = 15
 # Focos mínimos para o bônus de FRP valer por inteiro (evidence factor)
 MIN_FOCOS_FRP = 10
 
+# Níveis por limiares ABSOLUTOS de focos em 24h (ADR 002), do mais alto ao mais baixo.
+# Cada tupla é (mínimo de focos, nome do nível).
+LIMIARES_NIVEL = ((100, "Crítico"), (40, "Alto"), (15, "Médio"))
+NIVEL_PADRAO = "Baixo"
+ORDEM_NIVEIS = [NIVEL_PADRAO, "Médio", "Alto", "Crítico"]  # do menor para o maior
+
+
+def classify_nivel(focos_24h: float) -> str:
+    """Classifica um município pelo número de focos em 24h (limiares absolutos)."""
+    for minimo, nome in LIMIARES_NIVEL:
+        if focos_24h >= minimo:
+            return nome
+    return NIVEL_PADRAO
+
 
 def aggregate_by_municipio(
     df: pd.DataFrame, hours: int = 24, now: datetime | None = None
@@ -45,6 +59,8 @@ def aggregate_by_municipio(
             frp_max=("frp", "max"),
             risco_medio=("risco_fogo", "mean"),
             ultimo_foco=("data_hora_gmt", "max"),
+            lat=("lat", "mean"),  # centróide dos focos (usado no mapa)
+            lon=("lon", "mean"),
         )
         .reset_index()
     )
@@ -95,6 +111,7 @@ def calculate_priority(agg_24h: pd.DataFrame, agg_48h: pd.DataFrame | None = Non
         df["score_persistencia"] = 0
 
     df["prioridade"] = (df["score_focos"] + df["score_frp"] + df["score_persistencia"]).round(1)
+    df["nivel"] = df["focos"].map(classify_nivel)
     df = df.sort_values(["prioridade", "focos"], ascending=False).reset_index(drop=True)
 
     return df

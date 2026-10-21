@@ -10,13 +10,13 @@ O INPE publica diariamente os focos de calor detectados por satélite no Brasil,
 
 ## O que o MVP faz (v1)
 
-- [ ] Baixa automaticamente o CSV diário de focos do INPE (Brasil)
-- [ ] Limpa e padroniza os dados (lat/lon, data/hora, satélite, município, estado, bioma)
-- [ ] Conta focos por município nas últimas 24h e 48h
-- [ ] Calcula um score de prioridade simples (quantidade de focos + concentração em pouco tempo)
-- [ ] Dashboard web com:
-  - mapa de focos
-  - ranking dos municípios mais críticos
+- [x] Baixa automaticamente o CSV diário de focos do INPE (Brasil), últimos 3 dias
+- [x] Limpa e padroniza os dados (lat/lon, data/hora, satélite, município, estado, bioma)
+- [x] Conta focos por município nas últimas 24h e 48h
+- [x] Calcula um score de prioridade (0–100) e um nível por limiares absolutos de focos ([ADR 002](docs/adr/002-modelo-prioridade.md))
+- [x] Dashboard web (Streamlit) com:
+  - mapa por município (centro dos focos, cor pelo nível)
+  - ranking dos municípios mais críticos, com filtros por estado e nível
   - lista de alertas prioritários
 
 ### Fora do escopo do MVP
@@ -35,7 +35,7 @@ Machine Learning avançado · integração real com Defesa Civil · SMS/push · 
 
 ## Como rodar localmente
 
-> ⚠️ O projeto está no início: a estrutura existe, a ingestão ainda é um esqueleto.
+> O pipeline é executado manualmente por enquanto (sem agendamento automático).
 
 ```bash
 # 1. Clonar
@@ -50,8 +50,14 @@ python -m venv .venv
 # 3. Dependências
 pip install -r requirements.txt
 
-# 4. Rodar a ingestão (por enquanto só um esqueleto)
-python scripts/run_ingestion.py
+# 4. Baixar, limpar e calcular o ranking (gera data/processed/)
+python scripts/run_pipeline.py
+
+# 5. Abrir o dashboard (http://localhost:8501)
+streamlit run src/dashboard/app.py
+
+# Testes
+pytest
 ```
 
 ## Estrutura do repositório

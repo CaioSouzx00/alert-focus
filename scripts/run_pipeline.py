@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -45,7 +47,18 @@ def main() -> None:
     ranking.to_csv(out, index=False, encoding="utf-8")
     logging.info("Ranking salvo em %s (%d municípios)", out, len(ranking))
 
-    cols = ["estado", "municipio", "focos", "focos_48h", "frp_medio", "prioridade"]
+    meta = {
+        "gerado_em_utc": datetime.now(timezone.utc).isoformat(),
+        "ultimo_foco_utc": df["data_hora_gmt"].max().isoformat(),
+        "total_focos_processados": int(len(df)),
+        "focos_24h": int(agg_24["focos"].sum()),
+        "focos_48h": int(agg_48["focos"].sum()),
+        "arquivos": [p.name for p in paths],
+    }
+    (processed_dir / "meta.json").write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
+    logging.info("Metadados salvos: %s", meta)
+
+    cols = ["estado", "municipio", "focos", "focos_48h", "frp_medio", "prioridade", "nivel"]
     pd.set_option("display.width", 160)
     print(ranking[[c for c in cols if c in ranking.columns]].head(15).to_string())
 
