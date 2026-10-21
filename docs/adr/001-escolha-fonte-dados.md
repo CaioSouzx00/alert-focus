@@ -5,7 +5,7 @@
 
 ## Contexto
 
-O FocoAlerta precisa de dados de focos de calor para o Brasil que sejam oficiais, gratuitos e estáveis, para que os números do dashboard batam com os do INPE.
+O AlertFocus precisa de dados de focos de calor para o Brasil que sejam oficiais, gratuitos e estáveis, para que os números do dashboard batam com os do INPE.
 
 ## Decisão
 

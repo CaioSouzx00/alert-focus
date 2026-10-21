@@ -9,7 +9,7 @@ INPE_DAILY_CSV_URL = (
 )
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
-log = logging.getLogger("focoalerta.ingestion")
+log = logging.getLogger("alertfocus.ingestion")
 
 
 def main() -> None:
