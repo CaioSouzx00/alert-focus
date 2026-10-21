@@ -39,7 +39,7 @@ Machine Learning avançado · integração real com Defesa Civil · SMS/push · 
 
 ```bash
 # 1. Clonar
-git clone https://github.com/<seu-usuario>/alert-focus.git
+git clone https://github.com/CaioSouzx00/alert-focus.git
 cd alert-focus
 
 # 2. Ambiente virtual
